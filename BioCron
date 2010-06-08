@@ -1,0 +1,100 @@
+#!/bin/bash
+
+if [ $EUID -ne 0 ]; then
+    echo "You must be root to run `basename $0` `date`" | tee /opt/BioBatch/logs/BioCron.log
+    exit 1
+fi
+
+cd /opt/BioBatch/Jobs/
+
+shopt -s nullglob ## Stops FILE being expanded to *.batch if no batch files are present
+
+## Check for lockfile, if present wait ##
+while [ -f lockfile ]
+do
+    sleep 10
+done
+##########################################
+
+## Add Any Jobs That Are Not In The Queue ################
+for FILE in *.batch; do
+    JOB_USER=`echo "$FILE" | awk -F'_' '{print$1}'`
+    TIME=`echo "$FILE" | awk -F'_' '{print$4}'`
+    PROCS=`echo "$FILE" | awk -F'_' '{print$5}' | sed 's/\(.*\)\..*/\1/'`
+    JOB_NAME=`echo "$FILE" | awk -F'_' '{print$3}'`
+    JOB_DATE=`echo "$FILE" | awk -F'_' '{print$2}'`
+    mv $FILE ${FILE}_QUEUED
+    echo "${FILE}_QUEUED $PROCS $TIME $JOB_USER $JOB_NAME $JOB_DATE" >> Main.queue    
+done
+##########################################################
+
+if [ ! -f .procs_in_use ]
+then
+    echo "0" > .procs_in_use # Set no of processors in use to 0 if no batch jobs are running
+fi
+
+## Kill/Un-Queue any Jobs the Users have Terminated ###############
+for FILE in *.userkill; do
+    KILL=`cat $FILE`
+    if [ -f $KILL.batch_QUEUED.batchkill ]; then
+        at now < $KILL.batch_QUEUED.batchkill
+    else
+	cat Main.queue | grep -v "$KILL" > Main.queue_tmp
+        mv Main.queue_tmp Main.queue
+        rm -f $KILL.batch_QUEUED
+    fi
+    rm -f $FILE
+done
+###################################################################
+
+PROCS_IN_USE=`cat .procs_in_use`
+
+## Run Queued Jobs If Resources Are Available ############
+if [ ! -f Main.queue ]
+then
+    exit 0
+fi
+
+while read line; do
+JOB_USER=`echo $line | awk '{print$4}'`
+TIME_NEEDED=`echo $line | awk '{print$3}'`
+PROCS_NEEDED=`echo $line | awk '{print$2}'`
+COMMAND=`echo $line | awk '{print$1}'`
+PROGRAM=`cat $COMMAND | tail -2 | head -1 | awk '{print$4}'`
+JOB_DIRECTORY=`dirname $PROGRAM`
+JOB_NAME=`echo $line | awk '{print$5}'`
+JOB_DATE=`echo $line | awk '{print$6}'`
+
+if [ $(($PROCS_IN_USE + $PROCS_NEEDED)) -le $BIOBATCH_MAX_PROCS ]
+then
+    if [ -f $PROGRAM ]
+    then
+        ((su $JOB_USER -c ./$COMMAND); mv $JOB_DIRECTORY/${JOB_NAME}_${JOB_DATE}.userkill .) &
+        JOB_PID=$!
+
+        KILLFILE=${COMMAND}.batchkill
+        echo "BioClean $JOB_PID $PROGRAM $PROCS_NEEDED $COMMAND $JOB_USER" > $KILLFILE
+        (at now + $TIME_NEEDED minutes < $KILLFILE) || (echo "Oh dear, this is rather embarrasing. Something bad has happened and 'at' has failed to launch correctly for $JOB_USER's job $JOB_NAME. Please contact Tim (or your systems administrator) and ask him very nicely to fix it. `date`" >> /opt/BioBatch/logs/BioCron.log; mv $JOB_DIRECTORY/${JOB_NAME}_${JOB_DATE}.userkill .; exit 2)
+
+        echo "$(($PROCS_IN_USE + $PROCS_NEEDED))" > .procs_in_use
+
+        cat Main.queue | grep -v "$line" > Main.queue_tmp
+        mv Main.queue_tmp Main.queue
+    else
+	echo "$PROGRAM not found -- `date`" >> $PROGRAM.error
+	rm -f $COMMAND
+	cat Main.queue | grep -v "$line" > Main.queue_tmp
+        mv Main.queue_tmp Main.queue
+    fi
+fi
+
+PROCS_IN_USE=`cat .procs_in_use`
+echo $PROCS_IN_USE
+echo $BIOBATCH_MAX_PROCS
+if [ $PROCS_IN_USE -eq $BIOBATCH_MAX_PROCS ]
+then
+    exit 0
+fi
+done < Main.queue
+##########################################################
+exit 0

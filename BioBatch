@@ -1,0 +1,116 @@
+#!/bin/bash
+
+## Check for correct number of arguments ##
+if [ $# -ne 1 ]
+then
+	echo "Usage `basename $0` batchfile" >&2
+	exit 1
+fi
+##########################################
+
+## Create lockfile for biocron ##########
+touch /opt/BioBatch/Jobs/lockfile
+#########################################
+
+## Set Job Parameters From Input File ####
+input_file=$1
+
+count=1
+while $IFS read PARAM VAL
+do
+    case $PARAM in
+        PROCS)
+	    PROCS=$VAL;;
+        TIME)
+            TIME=$VAL;;
+	EXEC)
+	    EXEC=$VAL;;
+	NAME)
+	    NAME=$VAL;;
+	  * )
+	    echo "Unknown parameter in $input_file"
+	    echo "Known paramaters are: PROCS, TIME, EXEC, NAME"
+	    rm -f /opt/BioBatch/Jobs/lockfile
+	    exit 2;;
+    esac
+
+done < $input_file
+
+if [ ! -n "${PROCS}" ]; then
+    echo "Number of processors is not given"
+    rm -f /opt/BioBatch/Jobs/lockfile
+    exit 3
+fi
+if [ ! -n "${TIME}" ]; then
+    echo "Program run time is not given"
+    rm -f /opt/BioBatch/Jobs/lockfile
+    exit 3
+fi
+if [ ! -n "${EXEC}" ]; then
+    echo "Path of executable is not given"
+    rm -f /opt/BioBatch/Jobs/lockfile
+    exit 3
+fi
+if [ ! -n "${NAME}" ]; then
+    echo "A name for the job is not given"
+    rm -f /opt/BioBatch/Jobs/lockfile
+    exit 3
+fi
+###########################################
+
+## Check that TIME and PROCS are numbers ####
+
+echo $PROCS | grep '^[0-9][0-9]*$' > /dev/null
+
+if [ $? -ne 0 ]; then
+    echo "PROCS should be a number between 1 and $BIOBATCH_MAX_PROCS" 1>&2
+    rm -f /opt/BioBatch/Jobs/lockfile
+    exit 5
+fi
+
+echo $TIME | grep '^[0-9][0-9]*:*[0-9]*$' > /dev/null
+
+if [ $? -ne 0 ]; then
+    echo "TIME should be given in the format \`60' or \`1:00'" 1>&2
+    rm -f /opt/BioBatch/Jobs/lockfile
+    exit 5
+fi
+
+## Check that number of procs requested is < max procs ##
+
+if [ $PROCS -gt $BIOBATCH_MAX_PROCS ]; then
+    echo "The maximum number of processors that can be requested is $BIOBATCH_MAX_PROCS"
+    rm -f /opt/BioBatch/Jobs/lockfile
+    exit 4
+fi
+
+#########################################################
+
+## Generate Job File ######################
+DATE=`date +'%F-%T:%N'`
+HOURS=`echo $TIME | awk -F':' '{print$1}'`
+MINUTES=`echo $TIME | awk -F':' '{print$2}'`
+if [ $MINUTES = "" ]; then
+    MINUTES=$HOURS
+    HOURS=0
+fi
+TIME_MINUTES=$((($HOURS*60)+$MINUTES))
+NAME=`echo $NAME | sed -e 's/_/-/g'`
+
+echo "#!/bin/bash" > /opt/BioBatch/Jobs/${USER}_${DATE}_${NAME}_${TIME_MINUTES}_${PROCS}.batch
+echo "cd `dirname $EXEC`" >> /opt/BioBatch/Jobs/${USER}_${DATE}_${NAME}_${TIME_MINUTES}_${PROCS}.batch
+(echo -n 'echo "---------------- Your job started -- `date` ----------------" >> '; echo "$EXEC.output") >> /opt/BioBatch/Jobs/${USER}_${DATE}_${NAME}_${TIME_MINUTES}_${PROCS}.batch
+#echo "su $USER" >> /opt/BioBatch/Jobs/${USER}_${DATE}_${NAME}_${TIME_MINUTES}_${PROCS}.batch
+echo "mpirun -n $PROCS $EXEC >> $EXEC.output 2>>$EXEC.err" >> /opt/BioBatch/Jobs/${USER}_${DATE}_${NAME}_${TIME_MINUTES}_${PROCS}.batch
+(echo -n 'echo "---------------- Your job finished -- `date` ----------------" >> '; echo "$EXEC.output") >> /opt/BioBatch/Jobs/${USER}_${DATE}_${NAME}_${TIME_MINUTES}_${PROCS}.batch
+
+chmod 755 /opt/BioBatch/Jobs/${USER}_${DATE}_${NAME}_${TIME_MINUTES}_${PROCS}.batch
+
+## Generate User Kill File ################
+
+echo "${USER}_${DATE}_${NAME}_${TIME_MINUTES}_${PROCS}" > ${NAME}_${DATE}.userkill
+
+###########################################
+rm -f /opt/BioBatch/Jobs/lockfile
+
+exit 0

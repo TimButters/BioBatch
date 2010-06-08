@@ -1,0 +1,66 @@
+#!/bin/bash
+
+if [ $EUID -ne 0 ]; then
+    echo "This script must be run as root" | tee /opt/BioBatch/logs/BioClean.log
+fi
+
+if [ $# -ne 5 ]
+then
+    echo "Generally `basename $0` should not be called directly, it should be called by a BioBatch script"
+    exit 1
+fi
+
+cd /opt/BioBatch/Jobs
+
+JOB_PID=$1
+PROGRAM=$2
+PROCS_USED=$3
+COMMAND=$4
+JOB_USER=$5
+
+if [ ! -f $COMMAND.batchkill ]
+then
+    exit 0
+fi
+
+ps -eaf | grep -v grep | grep $COMMAND > /dev/null
+FOUND=$?
+
+rm -f $COMMAND.batchkill $COMMAND
+
+OLD_PROCS=`cat .procs_in_use`
+NEW_PROCS=$(($OLD_PROCS - $PROCS_USED))
+
+echo $NEW_PROCS > .procs_in_use
+
+if [ $FOUND -ne 0 ]; then
+	exit 0
+fi 
+
+#ps -eaf | grep $JOB_PID | grep mpi
+#RUNNING=$?
+
+#if [ $RUNNING -eq 0 ]; then
+#    kill -9 $JOB_PID
+#fi
+
+ps -eaf | grep -v grep | grep $PROGRAM | awk '{print$1 " " $2}' > .program.tmp
+while read JOBS; do
+    
+    THIS_USER=`echo $JOBS | awk '{print$1}'`
+    THIS_JOB=`echo $JOBS | awk '{print$2}'`
+    if [ "$THIS_USER" = "$JOB_USER" ]; then
+    	kill -9 $THIS_JOB &>> /opt/BioBatch/logs/BioClean.log
+    fi
+done < .program.tmp
+ 
+ps -eaf | grep -v grep | grep $COMMAND | awk '{print$1 " " $2}' > .command.tmp
+while read JOBS; do
+    
+    THIS_USER=`echo $JOBS | awk '{print$1}'`
+    THIS_JOB=`echo $JOBS | awk '{print$2}'`
+    if [ "$THIS_USER" = "$JOB_USER" ]; then
+    	kill -9 $THIS_JOB &>> /opt/BioBatch/logs/BioClean.log
+    fi
+done < .command.tmp
+exit 0

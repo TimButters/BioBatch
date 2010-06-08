@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "useage: `basename $0` BioBatch_generated_killfile"
+    exit 1
+fi
+
+if [[ $1 =~ .*userkill ]]; then
+    mv $1 /opt/BioBatch/Jobs/
+else
+    echo "This file is not a BioBatch generated kill file"
+    exit 2
+fi
+
+exit 0
