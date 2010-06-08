@@ -1,11 +1,11 @@
 #!/bin/bash
 
 if [ $EUID -ne 0 ]; then
-    echo "You must be root to run `basename $0` `date`" | tee /opt/BioBatch/logs/BioCron.log
+    echo "You must be root to run `basename $0` `date`" | tee $BIOBATCH_ROOT/logs/BioCron.log
     exit 1
 fi
 
-cd /opt/BioBatch/Jobs/
+cd $BIOBATCH_ROOT/Jobs/
 
 shopt -s nullglob ## Stops FILE being expanded to *.batch if no batch files are present
 
@@ -74,7 +74,7 @@ then
 
         KILLFILE=${COMMAND}.batchkill
         echo "BioClean $JOB_PID $PROGRAM $PROCS_NEEDED $COMMAND $JOB_USER" > $KILLFILE
-        (at now + $TIME_NEEDED minutes < $KILLFILE) || (echo "Oh dear, this is rather embarrasing. Something bad has happened and 'at' has failed to launch correctly for $JOB_USER's job $JOB_NAME. Please contact Tim (or your systems administrator) and ask him very nicely to fix it. `date`" >> /opt/BioBatch/logs/BioCron.log; mv $JOB_DIRECTORY/${JOB_NAME}_${JOB_DATE}.userkill .; exit 2)
+        (at now + $TIME_NEEDED minutes < $KILLFILE) || (echo "Oh dear, this is rather embarrasing. Something bad has happened and 'at' has failed to launch correctly for $JOB_USER's job $JOB_NAME. Please contact Tim (or your systems administrator) and ask him very nicely to fix it. `date`" >> $BIOBATCH_ROOT/logs/BioCron.log; mv $JOB_DIRECTORY/${JOB_NAME}_${JOB_DATE}.userkill .; exit 2)
 
         echo "$(($PROCS_IN_USE + $PROCS_NEEDED))" > .procs_in_use
 

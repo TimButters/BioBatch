@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $EUID -ne 0 ]; then
-    echo "This script must be run as root" | tee /opt/BioBatch/logs/BioClean.log
+    echo "This script must be run as root" | tee $BIOBATCH_ROOT/logs/BioClean.log
 fi
 
 if [ $# -ne 5 ]
@@ -10,7 +10,7 @@ then
     exit 1
 fi
 
-cd /opt/BioBatch/Jobs
+cd $BIOBATCH_ROOT/Jobs
 
 JOB_PID=$1
 PROGRAM=$2
@@ -50,7 +50,7 @@ while read JOBS; do
     THIS_USER=`echo $JOBS | awk '{print$1}'`
     THIS_JOB=`echo $JOBS | awk '{print$2}'`
     if [ "$THIS_USER" = "$JOB_USER" ]; then
-    	kill -9 $THIS_JOB &>> /opt/BioBatch/logs/BioClean.log
+    	kill -9 $THIS_JOB &>> $BIOBATCH_ROOT/logs/BioClean.log
     fi
 done < .program.tmp
  
@@ -60,7 +60,7 @@ while read JOBS; do
     THIS_USER=`echo $JOBS | awk '{print$1}'`
     THIS_JOB=`echo $JOBS | awk '{print$2}'`
     if [ "$THIS_USER" = "$JOB_USER" ]; then
-    	kill -9 $THIS_JOB &>> /opt/BioBatch/logs/BioClean.log
+    	kill -9 $THIS_JOB &>> $BIOBATCH_ROOT/logs/BioClean.log
     fi
 done < .command.tmp
 exit 0

@@ -6,7 +6,7 @@ if [ $# -ne 1 ]; then
 fi
 
 if [[ $1 =~ .*userkill ]]; then
-    mv $1 /opt/BioBatch/Jobs/
+    mv $1 $BIOBATCH_ROOT/Jobs/
 else
     echo "This file is not a BioBatch generated kill file"
     exit 2

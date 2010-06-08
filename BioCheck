@@ -11,8 +11,8 @@ NAME=`echo $line | awk '{print$1}' | awk -F'_' '{print$3}'`
 
 echo $USER_TIME $NAME
 
-done < /opt/BioBatch/Jobs/Main.queue
+done < $BIOBATCH_JOBS/Jobs/Main.queue
 
 echo "-----------------------------------------"
-echo "`cat /opt/BioBatch/Jobs/.procs_in_use` of $BIOBATCH_MAX_PROCS processors in use"
+echo "`cat $BIOBATCH_ROOT/Jobs/.procs_in_use` of $BIOBATCH_MAX_PROCS processors in use"
 echo
