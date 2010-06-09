@@ -5,6 +5,14 @@ if [ $EUID -ne 0 ]; then
     exit 1
 fi
 
+if [[ $BIOBATCH_ROOT == "" ]]; then
+    BIOBATCH_ROOT=/opt/BioBatch
+fi
+
+if [[ $BIOBATCH_MAX_PROCS == "" ]]; then
+    BIOBATCH_MAX_PROCS=8
+fi
+
 cd $BIOBATCH_ROOT/Jobs/
 
 shopt -s nullglob ## Stops FILE being expanded to *.batch if no batch files are present
