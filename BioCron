@@ -64,16 +64,16 @@ PROGRAM=`cat $COMMAND | tail -2 | head -1 | awk '{print$4}'`
 JOB_DIRECTORY=`dirname $PROGRAM`
 JOB_NAME=`echo $line | awk '{print$5}'`
 JOB_DATE=`echo $line | awk '{print$6}'`
+KILLFILE=${COMMAND}.batchkill
 
 if [ $(($PROCS_IN_USE + $PROCS_NEEDED)) -le $BIOBATCH_MAX_PROCS ]
 then
-    if [ -f $PROGRAM ]
-    then
+    if [ -f $PROGRAM ]; then
+
         ((su $JOB_USER -c ./$COMMAND); mv $JOB_DIRECTORY/${JOB_NAME}_${JOB_DATE}.userkill .) &
         JOB_PID=$!
 
-        KILLFILE=${COMMAND}.batchkill
-        echo "BioClean $JOB_PID $PROGRAM $PROCS_NEEDED $COMMAND $JOB_USER" > $KILLFILE
+        echo "$BIOBATCH_ROOT/bin/BioClean $JOB_PID $PROGRAM $PROCS_NEEDED $COMMAND $JOB_USER" > $KILLFILE
         (at now + $TIME_NEEDED minutes < $KILLFILE) || (echo "Oh dear, this is rather embarrasing. Something bad has happened and 'at' has failed to launch correctly for $JOB_USER's job $JOB_NAME. Please contact Tim (or your systems administrator) and ask him very nicely to fix it. `date`" >> $BIOBATCH_ROOT/logs/BioCron.log; mv $JOB_DIRECTORY/${JOB_NAME}_${JOB_DATE}.userkill .; exit 2)
 
         echo "$(($PROCS_IN_USE + $PROCS_NEEDED))" > .procs_in_use
