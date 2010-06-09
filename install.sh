@@ -49,8 +49,8 @@ fi
 
 crontab -l > crontab.tmp
 
-echo "* 19-8 * * mon-fri $BINARIES/BioCron" >> crontab.tmp
-echo "* * * * sat-sun $BINARIES/BioCron" >> crontab.tmp
+echo "* 19-8 * * mon-fri $BIOBATCH_ROOT_INSTALL/bin/BioCron" >> crontab.tmp
+echo "* * * * sat-sun $BIOBATCH_ROOT_INSTALL/bin/BioCron" >> crontab.tmp
 
 crontab crontab.tmp
 rm crontab.tmp
