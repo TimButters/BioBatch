@@ -1,4 +1,7 @@
 #!/bin/bash
+# Install script for BioBatch batch processing system
+# Tim Butters <timothy.daniel.butters@gmail.com>
+# 9 June 2010
 
 if [ $EUID -eq 0 ]; then
     echo "BioBatch must be installed by the root user" 1>&2
@@ -49,4 +52,6 @@ echo "* 19-8 * * mon-fri $BINARIES/BioCron" >> crontab.tmp
 echo "* * * * sat-sun $BINARIES/BioCron" >> crontab.tmp
 
 crontab crontab.tmp
+rm crontab.tmp
 
+echo "Please re-start cron to complete the installation"
