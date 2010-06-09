@@ -3,8 +3,9 @@
 # Tim Butters <timothy.daniel.butters@gmail.com>
 # 9 June 2010
 
-if [ $EUID -eq 0 ]; then
+if [ $EUID -ne 0 ]; then
     echo "BioBatch must be installed by the root user" 1>&2
+    exit 1
 fi
 
 BIOBATCH_ROOT_INSTALL=/opt/BioBatch
