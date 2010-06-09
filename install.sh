@@ -26,7 +26,7 @@ cp BioCron $BIOBATCH_ROOT_INSTALL/bin/
 cp BioClean $BIOBATCH_ROOT_INSTALL/bin/
 
 BINARIES=/usr/bin
-echo "Where would you like BIoBatch to install the binary file? (Make sure this location is in your PATH) [/usr/bin]"
+echo "Where would you like BioBatch to install the binary files? (Make sure this location is in your PATH) [/usr/bin]"
 read ans
 
 if [[ $ans == "" ]]; then
@@ -43,7 +43,7 @@ if [[ -e /etc/profile ]]; then
     echo "BIOBATCH_ROOT=$BIOBATCH_ROOT_INSTALL" >> /etc/profile
     echo "export BIOBATCH_ROOT" >> /etc/profile
 else
-    echo "Can't find /etc/profile. Please add the lines\n BIOBATCH_ROOT=$BIOBATCH_ROOT_INSTALL\n export BIOBATCH_ROOT\n to your global environment variables"
+    echo "Can't find /etc/profile. Please add the lines\n   BIOBATCH_ROOT=$BIOBATCH_ROOT_INSTALL\n   export BIOBATCH_ROOT\nto your global environment variables"
 fi
 
 crontab -l > crontab.tmp
