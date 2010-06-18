@@ -1,1 +1,0 @@
-Some cron systems don't load environment variables so $BIOBATCH_ROOT and $BIOBATCH_MAX_PROCS don't get loaded. Do something about this!?
