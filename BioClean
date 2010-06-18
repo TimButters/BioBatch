@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+. /etc/profile
+
 if [ $EUID -ne 0 ]; then
     echo "This script must be run as root" | tee $BIOBATCH_ROOT/logs/BioClean.log
 fi
@@ -37,12 +40,12 @@ if [ $FOUND -ne 0 ]; then
 	exit 0
 fi 
 
-#ps -eaf | grep $JOB_PID | grep mpi
-#RUNNING=$?
+ps -eaf | grep $JOB_PID | grep mpi
+RUNNING=$?
 
-#if [ $RUNNING -eq 0 ]; then
-#    kill -9 $JOB_PID
-#fi
+if [ $RUNNING -eq 0 ]; then
+    kill -9 $JOB_PID
+fi
 
 ps -eaf | grep -v grep | grep $PROGRAM | awk '{print$1 " " $2}' > .program.tmp
 while read JOBS; do
