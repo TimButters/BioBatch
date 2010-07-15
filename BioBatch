@@ -90,7 +90,7 @@ fi
 DATE=`date +'%F-%T:%N'`
 HOURS=`echo $TIME | awk -F':' '{print$1}'`
 MINUTES=`echo $TIME | awk -F':' '{print$2}'`
-if [ $MINUTES = "" ]; then
+if [[ $MINUTES = "" ]]; then
     MINUTES=$HOURS
     HOURS=0
 fi
