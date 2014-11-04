@@ -1,6 +1,5 @@
 #!/bin/bash
 # Install script for BioBatch batch processing system
-# Tim Butters <timothy.daniel.butters@gmail.com>
 # 9 June 2010
 
 if [ $EUID -ne 0 ]; then

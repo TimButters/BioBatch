@@ -33,7 +33,6 @@ do
 	    rm -f $BIOBATCH_ROOT/Jobs/lockfile
 	    exit 2;;
     esac
-
 done < $input_file
 
 if [ ! -n "${PROCS}" ]; then
